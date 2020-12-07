@@ -1,0 +1,454 @@
+; Program: Final Lab
+; Authors: Chris Chastain, Wen Fang, Dhiraj Sharma
+;    Date: 04/28/19
+; Purpose: Traffic Light Controller
+    
+    
+ #include "p16f18875.inc" 
+ 
+; CONFIG1 
+; __config 0xFFFF 
+ __CONFIG _CONFIG1, _FEXTOSC_ECH & _RSTOSC_EXT1X & _CLKOUTEN_OFF & _CSWEN_ON & _FCMEN_ON 
+; CONFIG2 
+; __config 0xFFFF 
+ __CONFIG _CONFIG2, _MCLRE_ON & _PWRTE_OFF & _LPBOREN_OFF & _BOREN_ON & _BORV_LO & _ZCD_OFF & _PPS1WAY_ON & _STVREN_ON 
+; CONFIG3 
+; __config 0xFF9F 
+ __CONFIG _CONFIG3, _WDTCPS_WDTCPS_31 & _WDTE_OFF & _WDTCWS_WDTCWS_7 & _WDTCCS_SC 
+; CONFIG4 
+; __config 0xFFFF 
+ __CONFIG _CONFIG4, _WRT_OFF & _SCANE_available & _LVP_ON 
+; CONFIG5 
+; __config 0xFFFF 
+ __CONFIG _CONFIG5, _CP_OFF & _CPD_OFF 
+ 
+; Variables and Constants
+  udata_shr
+i   res 1			; index 'i'
+counter	res 1			; index 'counter'
+yellow	res 1			; index 'yellow'
+FLAG	res 1			; boolean flag
+ 
+    org	 	0x0000		; load beginning address
+    goto Start			; start
+
+    
+Start
+    ; Set program clock
+    banksel 	OSCFRQ		; Select bank
+    movlw	b'00000000'	; 1 Mhz clock
+    movwf  	OSCFRQ      	; Load new clock
+    
+    ; Configure RA0 for LED output
+    banksel ANSELA		; select bank A for ANSEL
+    clrf    ANSELA		; clear ANSEL A for all digital
+    banksel TRISA		; select bank A for TRIS
+    clrf    TRISA		; clear TRIS A for all digital output
+    banksel LATA		; select bank A for LAT 
+    clrf    LATA		; clear all RA
+    
+    ; Configure RC1 for BTN input
+    banksel ANSELC		; select bank 'C' for ANSEL
+    clrf    ANSELC		; clear ANSEL 'C' for all digital
+    banksel TRISC		; select bank 'C' for TRIS
+    clrf    TRISC		; clear all for digital output
+    bsf	    TRISC, 3		; set RC1 to digital input
+    banksel PORTC		; select bank 'C' for PORT
+    clrf    PORTC		; clear PORT 'C'
+    
+    ; Configure RC for lights
+    banksel LATC		; select bank A for LAT 
+    clrf    LATC		; clear all RA
+        
+    call    INT			; initialize all indices
+
+; Main St. GREEN 10s (minimum)    
+LOOP
+
+    ; Set lights for both streets
+    bcf	    LATC, 1		; LED2 GREEN OFF
+    bcf	    LATA, 0		; LED1 RED OFF
+    bsf	    LATC, 0		; LED2 RED ON
+    bsf	    LATA, 1		; LED1 GREEN ON
+    
+    ; 10s Green light for Main St (LED1)
+    movfw   counter		; move value from 'counter' to working register
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+   
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    ; Set boolean flag if SWITCH pressed
+    btfsc   PORTC, 3		; skip next instruction if button released
+    goto    BOOL		; jump to BOOL
+
+    ; Decrement index & repeat to lengthen delay
+    decfsz   counter		; decrement index 'counter'
+    goto LOOP			; iterate
+    
+    
+; Timer complete, skip if FLAG set or wait for SWITCH  
+LOOP1
+    btfsc   FLAG, 0		; skip to LOOP2 if FLAG set
+    goto    LOOP2		; jump to LOOP2
+    btfss   PORTC, 3		; skip next instruction if button pushed
+    goto    LOOP1		; loop until button push
+
+    
+; SWITCH pressed, waiting for release 
+LOOP2
+    btfsc   PORTC, 3		; skip next instruction if button released
+    goto    LOOP2		; jump to LOOP if bit low
+    bcf	    FLAG, 0		; clear boolean flag
+    call    INT			; reinitialize indices
+
+    
+; Main St (LED1) Yellow 3s    
+LOOP3
+    bsf	    LATA, 0		; turn on RED LED1 (green ON, LED yellow)
+    movfw   yellow		; move value from 'yellow' to working register
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+   
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+        
+    decfsz  yellow		; decrement 'yellow' index
+    goto    LOOP3		; iterate
+    call    INT			; initialize counters after ylw decrement finish
+    bcf	    LATA, 1		; turn OFF GREEN ( and yellow) for LED1
+    bcf	    LATC, 0		; turn OFF RED LED2
+    bsf	    LATC, 1		; turn ON GREEN LED2
+    
+    
+; Side St (LED2) GREEN max 10s    
+LOOP4 
+    movfw   counter		; move value from 'counter' to working register
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+   
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    btfsc   PORTC, 3		; skip next instruction if RC3 bit set 
+    goto    LOOP5		; jump to LOOP5 if SWITCH pressed
+        
+    decfsz  counter		; decrement index 'counter' and skip if zero
+    goto    LOOP4		; jump to LOOP4
+    goto    LOOP6		; jump to LOOP6 if no SWITCH pressed
+
+    
+; Enter this loop if SWITCH Pressed, waits for Release
+LOOP5
+    btfsc   PORTC, 3		; skip next instruction if button released
+    goto    LOOP5		; jump to LOOP5 if bit low
+    
+    call    INT			; initialize indices
+    goto    LOOP6		; jump to LOOP6
+
+    
+; Side St (LED2) Yellow 3s  
+LOOP6
+    bsf	    LATC, 0		; RED LED2 ON with GREEN to make YELLOW
+    
+    movfw   yellow		; move value from 'yellow' to working register
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+   
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+    
+    movwf   i			; move value from working register to label 'i'
+    call    DELAY		; call delay
+        
+    decfsz  yellow		; decrement index 'yellow' and skip if zero
+    goto    LOOP6		; iterate   
+    goto    LOOP		; back to Main St (beginning)
+    
+
+; Boolean Flag subroutine    
+BOOL
+    bsf	    FLAG, 0		; set bit '0' of FLAG high
+    return			; return to caller
+
+    
+; Delay subroutine    
+DELAY
+    decfsz  i, 	F	; Decrement and skip next instruction on 0
+    goto    DELAY		; Delay loop
+    return			; return to caller
+
+    
+; Initialize index subroutine
+INT
+    movlb 0			; load zero
+    clrf    i			; initialize index 'i'
+    movlw   0xFF		; Load max value into 'w' register
+    movwf   counter		; Load value from w into index 'counter'
+    movlw   0x7F		; Load medium value into 'w' register
+    movwf   yellow		; Move value from w into index 'yellow'
+    return			; return to caller
+    
+    end				; exit greenly
